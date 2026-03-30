@@ -1,0 +1,18 @@
+import { Router } from 'express'
+import { authController } from '../controllers/authController.js'
+import { authenticate } from '../middleware/auth.js'
+
+const router = Router()
+
+// Public routes
+router.post('/login', authController.login)
+router.post('/register', authController.register)
+router.post('/verify-code', authController.verifyCode)
+router.post('/resend-code', authController.resendCode)
+
+// Protected routes
+router.get('/profile', authenticate, authController.getProfile)
+router.put('/profile', authenticate, authController.updateProfile)
+router.get('/users', authenticate, authController.getAllUsers)
+
+export default router
