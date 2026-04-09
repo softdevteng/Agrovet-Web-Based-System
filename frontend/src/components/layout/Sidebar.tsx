@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, Home, Package, ShoppingCart, Leaf, Stethoscope, LogOut, BarChart3, History } from 'lucide-react'
+import { Menu, Home, Package, ShoppingCart, Leaf, Stethoscope, LogOut, BarChart3, History, FileText } from 'lucide-react'
 
 export default function Sidebar() {
   const location = useLocation()
@@ -10,6 +10,7 @@ export default function Sidebar() {
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/inventory', icon: Package, label: 'Inventory' },
     { path: '/pos', icon: ShoppingCart, label: 'POS' },
+    { path: '/invoices', icon: FileText, label: 'Invoices' },
     { path: '/sales-history', icon: History, label: 'Sales History' },
     { path: '/ai-services', icon: Leaf, label: 'AI Services' },
     { path: '/veterinary', icon: Stethoscope, label: 'Veterinary' },

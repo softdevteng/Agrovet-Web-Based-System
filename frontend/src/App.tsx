@@ -8,6 +8,7 @@ import { VetRoute, AttendantRoute, AnyAuthRoute } from './components/PrivateRout
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const Inventory = React.lazy(() => import('./pages/Inventory'))
 const POS = React.lazy(() => import('./pages/POS'))
+const Invoices = React.lazy(() => import('./pages/Invoices'))
 const SalesHistory = React.lazy(() => import('./pages/SalesHistory'))
 const AIServices = React.lazy(() => import('./pages/AIServices'))
 const Veterinary = React.lazy(() => import('./pages/Veterinary'))
@@ -66,6 +67,14 @@ export default function App() {
               element={
                 <AttendantRoute>
                   <POS />
+                </AttendantRoute>
+              } 
+            />
+            <Route 
+              path="/invoices" 
+              element={
+                <AttendantRoute>
+                  <Invoices />
                 </AttendantRoute>
               } 
             />
