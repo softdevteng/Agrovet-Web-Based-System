@@ -17,8 +17,11 @@ interface Receipt {
   tax: number
   total: number
   paymentMethod: string
+  paymentStatus: string
   customerName?: string
   customerPhone?: string
+  customerEmail?: string
+  deliveryAddress?: string
   notes?: string
 }
 
@@ -27,9 +30,11 @@ interface ReceiptModalProps {
   receipt: Receipt | null
   onClose: () => void
   onPrint: () => void
+  onPrintInvoice?: () => void
+  onPrintDelivery?: () => void
 }
 
-export default function ReceiptModal({ isOpen, receipt, onClose, onPrint }: ReceiptModalProps) {
+export default function ReceiptModal({ isOpen, receipt, onClose, onPrint, onPrintInvoice, onPrintDelivery }: ReceiptModalProps) {
   if (!isOpen || !receipt) return null
 
   return (
@@ -130,6 +135,16 @@ export default function ReceiptModal({ isOpen, receipt, onClose, onPrint }: Rece
               <span>Payment Method:</span>
               <span className="font-bold text-neutral-900 capitalize">{receipt.paymentMethod.replace(/_/g, ' ')}</span>
             </div>
+            <div className="flex justify-between text-neutral-600 text-xs mt-2">
+              <span>Status:</span>
+              <span className={`font-bold capitalize px-2 py-1 rounded text-xs ${
+                receipt.paymentStatus === 'completed' 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-orange-100 text-orange-700'
+              }`}>
+                {receipt.paymentStatus}
+              </span>
+            </div>
           </div>
 
           {/* Notes */}
@@ -151,20 +166,45 @@ export default function ReceiptModal({ isOpen, receipt, onClose, onPrint }: Rece
         </div>
 
         {/* Action Buttons */}
-        <div className="p-4 border-t border-neutral-200 flex gap-3 bg-neutral-50">
-          <button
-            onClick={onPrint}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
-          >
-            <Printer size={18} />
-            Print Receipt
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors font-medium"
-          >
-            Close
-          </button>
+        <div className="p-4 border-t border-neutral-200 space-y-2 bg-neutral-50">
+          <div className="flex gap-2">
+            <button
+              onClick={onPrint}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium text-sm"
+            >
+              <Printer size={16} />
+              Print Receipt
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors font-medium text-sm"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          
+          {receipt.paymentStatus === 'pending' && (
+            <div className="flex gap-2">
+              {onPrintInvoice && (
+                <button
+                  onClick={onPrintInvoice}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+                >
+                  <Printer size={16} />
+                  Print Invoice
+                </button>
+              )}
+              {onPrintDelivery && (
+                <button
+                  onClick={onPrintDelivery}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium text-sm"
+                >
+                  <Printer size={16} />
+                  Delivery Note
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

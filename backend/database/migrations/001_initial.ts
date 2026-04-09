@@ -155,6 +155,8 @@ async function runMigrations() {
         cost_total DECIMAL(10, 2) DEFAULT 0,
         profit DECIMAL(10, 2) DEFAULT 0,
         payment_method VARCHAR(50),
+        payment_status VARCHAR(50) DEFAULT 'completed',
+        due_date DATE,
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -211,6 +213,68 @@ async function runMigrations() {
     `)
     console.log('✓ Created credit_ledger table')
 
+    // Create invoices table
+    await query(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sale_id UUID NOT NULL REFERENCES sales_transactions(id) ON DELETE CASCADE,
+        invoice_number VARCHAR(50) UNIQUE NOT NULL,
+        customer_name VARCHAR(255) NOT NULL,
+        customer_phone VARCHAR(20),
+        customer_email VARCHAR(255),
+        items_count INTEGER NOT NULL,
+        subtotal DECIMAL(10, 2) NOT NULL,
+        discount DECIMAL(10, 2) DEFAULT 0,
+        tax DECIMAL(10, 2) NOT NULL,
+        total DECIMAL(10, 2) NOT NULL,
+        payment_method VARCHAR(50),
+        notes TEXT,
+        generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created invoices table')
+
+    // Create delivery notes table
+    await query(`
+      CREATE TABLE IF NOT EXISTS delivery_notes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sale_id UUID NOT NULL REFERENCES sales_transactions(id) ON DELETE CASCADE,
+        delivery_number VARCHAR(50) UNIQUE NOT NULL,
+        customer_name VARCHAR(255) NOT NULL,
+        customer_phone VARCHAR(20),
+        customer_address TEXT,
+        items_count INTEGER NOT NULL,
+        total_quantity INTEGER NOT NULL,
+        delivery_status VARCHAR(50) DEFAULT 'pending',
+        delivered_by VARCHAR(255),
+        delivery_date DATE,
+        delivery_time TIME,
+        notes TEXT,
+        signature_url VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created delivery_notes table')
+
+    // Create company settings table
+    await query(`
+      CREATE TABLE IF NOT EXISTS company_settings (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        company_name VARCHAR(255) NOT NULL,
+        company_logo_url VARCHAR(255),
+        phone VARCHAR(20),
+        email VARCHAR(255),
+        address TEXT,
+        tax_id VARCHAR(100),
+        invoice_prefix VARCHAR(50) DEFAULT 'INV',
+        delivery_prefix VARCHAR(50) DEFAULT 'DN',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created company_settings table')
+
     // Create verification codes table
     await query(`
       CREATE TABLE IF NOT EXISTS verification_codes (
@@ -231,9 +295,15 @@ async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_ai_services_service_date ON ai_services(service_date);
       CREATE INDEX IF NOT EXISTS idx_sales_transactions_date ON sales_transactions(created_at);
       CREATE INDEX IF NOT EXISTS idx_sales_transactions_attendant ON sales_transactions(attendant_id);
+      CREATE INDEX IF NOT EXISTS idx_sales_transactions_payment_status ON sales_transactions(payment_status);
       CREATE INDEX IF NOT EXISTS idx_sales_items_sale_id ON sales_items(sale_id);
       CREATE INDEX IF NOT EXISTS idx_sales_items_product_id ON sales_items(product_id);
       CREATE INDEX IF NOT EXISTS idx_credit_ledger_farmer_id ON credit_ledger(farmer_id);
+      CREATE INDEX IF NOT EXISTS idx_invoices_sale_id ON invoices(sale_id);
+      CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON invoices(invoice_number);
+      CREATE INDEX IF NOT EXISTS idx_delivery_notes_sale_id ON delivery_notes(sale_id);
+      CREATE INDEX IF NOT EXISTS idx_delivery_notes_delivery_number ON delivery_notes(delivery_number);
+      CREATE INDEX IF NOT EXISTS idx_delivery_notes_status ON delivery_notes(delivery_status);
     `)
     console.log('✓ Created database indices')
 

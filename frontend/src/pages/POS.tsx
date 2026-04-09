@@ -34,8 +34,11 @@ interface Receipt {
   tax: number
   total: number
   paymentMethod: string
+  paymentStatus: string
   customerName?: string
   customerPhone?: string
+  customerEmail?: string
+  deliveryAddress?: string
   notes?: string
 }
 
@@ -48,13 +51,19 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [notes, setNotes] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false)
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false)
   const [transactionCounter, setTransactionCounter] = useState(1)
+  const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [deliveryNumber, setDeliveryNumber] = useState('')
 
   // Get user from localStorage
   const user = (() => {
@@ -211,6 +220,15 @@ export default function POS() {
       return
     }
 
+    // Validate credit purchases require customer info
+    if (paymentMethod === 'credit') {
+      if (!customerName.trim() || !customerPhone.trim()) {
+        setError('Customer name and phone are required for credit purchases')
+        setTimeout(() => setError(null), 3000)
+        return
+      }
+    }
+
     try {
       setIsProcessing(true)
       setError(null)
@@ -233,8 +251,11 @@ export default function POS() {
         tax,
         total,
         paymentMethod,
+        paymentStatus: paymentMethod === 'credit' ? 'pending' : 'completed',
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,
+        customerEmail: customerEmail || undefined,
+        deliveryAddress: deliveryAddress || undefined,
         notes: notes || undefined,
       }
 
@@ -246,6 +267,11 @@ export default function POS() {
 
       // Mock successful response with SK-#### format
       const mockTransactionId = `SK-${String(transactionCounter).padStart(4, '0')}`
+      const mockInvoiceNumber = `INV-${String(transactionCounter).padStart(6, '0')}`
+      const mockDeliveryNumber = `DN-${String(transactionCounter).padStart(6, '0')}`
+      
+      setInvoiceNumber(mockInvoiceNumber)
+      setDeliveryNumber(mockDeliveryNumber)
       setTransactionCounter(transactionCounter + 1)
 
       const receiptData: Receipt = {
@@ -264,8 +290,11 @@ export default function POS() {
         tax,
         total,
         paymentMethod,
+        paymentStatus: paymentMethod === 'credit' ? 'pending' : 'completed',
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,
+        customerEmail: customerEmail || undefined,
+        deliveryAddress: deliveryAddress || undefined,
         notes: notes || undefined,
       }
 
@@ -288,6 +317,8 @@ export default function POS() {
       setDiscount(0)
       setCustomerName('')
       setCustomerPhone('')
+      setCustomerEmail('')
+      setDeliveryAddress('')
       setNotes('')
       setPaymentMethod('cash')
     } catch (err) {
@@ -303,12 +334,197 @@ export default function POS() {
     window.print()
   }
 
+  const handlePrintInvoice = () => {
+    // Generate invoice print window
+    const invoiceWindow = window.open('', 'PRINT_INVOICE', 'width=800,height=600')
+    if (invoiceWindow && receipt) {
+      invoiceWindow.document.write(generateInvoiceHTML(receipt, invoiceNumber))
+      invoiceWindow.document.close()
+      setTimeout(() => invoiceWindow.print(), 250)
+    }
+  }
+
+  const handlePrintDeliveryNote = () => {
+    // Generate delivery note print window
+    const deliveryWindow = window.open('', 'PRINT_DELIVERY', 'width=800,height=600')
+    if (deliveryWindow && receipt) {
+      deliveryWindow.document.write(generateDeliveryNoteHTML(receipt, deliveryNumber))
+      deliveryWindow.document.close()
+      setTimeout(() => deliveryWindow.print(), 250)
+    }
+  }
+
+  const generateInvoiceHTML = (receipt: Receipt, invoiceNum: string) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Invoice ${invoiceNum}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+          .company-name { font-size: 24px; font-weight: bold; color: #2D5A27; }
+          .invoice-title { font-size: 18px; font-weight: bold; margin: 20px 0; }
+          .invoice-details { margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background-color: #2D5A27; color: white; padding: 10px; text-align: left; }
+          td { padding: 8px; border-bottom: 1px solid #ccc; }
+          .totals { text-align: right; margin-top: 20px; padding-top: 20px; border-top: 2px solid #333; }
+          .total-row { font-size: 18px; font-weight: bold; color: #2D5A27; margin: 10px 0; }
+          .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">SK AGROVET</div>
+          <p>Professional Agricultural Solutions</p>
+        </div>
+        
+        <div class="invoice-title">INVOICE - ${invoiceNum}</div>
+        
+        <div class="invoice-details">
+          <div>
+            <strong>Bill To:</strong><br/>
+            ${receipt.customerName || 'Walk-in Customer'}<br/>
+            ${receipt.customerPhone || ''}<br/>
+            ${receipt.customerEmail || ''}
+          </div>
+          <div>
+            <strong>Transaction ID:</strong> ${receipt.transactionId}<br/>
+            <strong>Date:</strong> ${new Date(receipt.timestamp).toLocaleDateString()}<br/>
+            <strong>Status:</strong> <span style="color: ${receipt.paymentStatus === 'completed' ? 'green' : 'orange'}">${receipt.paymentStatus.toUpperCase()}</span>
+          </div>
+        </div>
+
+        <table>
+          <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Amount</th>
+          </tr>
+          ${receipt.items.map(item => `
+            <tr>
+              <td>${item.productName} (${item.sku})</td>
+              <td>${item.quantity}</td>
+              <td>KES ${item.unitPrice.toFixed(2)}</td>
+              <td>KES ${(item.unitPrice * item.quantity).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <div class="totals">
+          <div>Subtotal: <strong>KES ${receipt.subtotal.toFixed(2)}</strong></div>
+          ${receipt.discountAmount > 0 ? `<div>Discount: <strong>-KES ${receipt.discountAmount.toFixed(2)}</strong></div>` : ''}
+          <div>Tax (16%): <strong>KES ${receipt.tax.toFixed(2)}</strong></div>
+          <div class="total-row">TOTAL: KES ${receipt.total.toFixed(2)}</div>
+          <div style="margin-top: 10px; color: #666;">Payment Method: <strong>${receipt.paymentMethod.toUpperCase()}</strong></div>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for your business!</p>
+          <p>Generated on ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
+  const generateDeliveryNoteHTML = (receipt: Receipt, deliveryNum: string) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Delivery Note ${deliveryNum}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+          .company-name { font-size: 24px; font-weight: bold; color: #2D5A27; }
+          .delivery-title { font-size: 18px; font-weight: bold; margin: 20px 0; }
+          .delivery-details { margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background-color: #2D5A27; color: white; padding: 10px; text-align: left; }
+          td { padding: 8px; border-bottom: 1px solid #ccc; }
+          .signature-area { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+          .signature-box { border-top: 1px solid #000; padding-top: 10px; }
+          .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">SK AGROVET</div>
+          <p>Professional Agricultural Solutions</p>
+        </div>
+        
+        <div class="delivery-title">DELIVERY NOTE - ${deliveryNum}</div>
+        
+        <div class="delivery-details">
+          <div>
+            <strong>Deliver To:</strong><br/>
+            ${receipt.customerName || 'Customer'}<br/>
+            ${receipt.customerPhone || ''}<br/>
+            ${receipt.deliveryAddress || 'Address not provided'}
+          </div>
+          <div>
+            <strong>Transaction ID:</strong> ${receipt.transactionId}<br/>
+            <strong>Date:</strong> ${new Date(receipt.timestamp).toLocaleDateString()}<br/>
+            <strong>Total Items:</strong> ${receipt.items.reduce((sum, item) => sum + item.quantity, 0)}
+          </div>
+        </div>
+
+        <table>
+          <tr>
+            <th>Item Description</th>
+            <th>SKU</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Received</th>
+          </tr>
+          ${receipt.items.map(item => `
+            <tr>
+              <td>${item.productName}</td>
+              <td>${item.sku}</td>
+              <td>${item.quantity}</td>
+              <td>units</td>
+              <td>☐</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <div style="margin: 20px 0;">
+          <strong>Total Amount: KES ${receipt.total.toFixed(2)}</strong><br/>
+          <strong>Payment Status:</strong> <span style="color: ${receipt.paymentStatus === 'completed' ? 'green' : 'orange'}">${receipt.paymentStatus.toUpperCase()}</span>
+        </div>
+
+        <div class="signature-area">
+          <div class="signature-box">
+            <strong>Delivered by:</strong><br/>
+            Signature: ________________<br/>
+            Date: ________________
+          </div>
+          <div class="signature-box">
+            <strong>Received by:</strong><br/>
+            Signature: ________________<br/>
+            Date: ________________
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Generated on ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
   const handleClearCart = () => {
     if (window.confirm('Clear all items from cart?')) {
       setCartItems([])
       setDiscount(0)
       setCustomerName('')
       setCustomerPhone('')
+      setCustomerEmail('')
+      setDeliveryAddress('')
       setNotes('')
       setPaymentMethod('cash')
     }
@@ -365,6 +581,10 @@ export default function POS() {
               onCustomerNameChange={setCustomerName}
               customerPhone={customerPhone}
               onCustomerPhoneChange={setCustomerPhone}
+              customerEmail={customerEmail}
+              onCustomerEmailChange={setCustomerEmail}
+              deliveryAddress={deliveryAddress}
+              onDeliveryAddressChange={setDeliveryAddress}
               notes={notes}
               onNotesChange={setNotes}
               onCheckout={handleCheckout}
@@ -380,6 +600,8 @@ export default function POS() {
         receipt={receipt}
         onClose={() => setShowReceipt(false)}
         onPrint={handlePrintReceipt}
+        onPrintInvoice={receipt?.paymentStatus === 'pending' ? handlePrintInvoice : undefined}
+        onPrintDelivery={receipt?.paymentStatus === 'pending' ? handlePrintDeliveryNote : undefined}
       />
     </Layout>
   )

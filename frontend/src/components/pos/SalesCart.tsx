@@ -21,6 +21,10 @@ interface CartProps {
   onCustomerNameChange: (name: string) => void
   customerPhone: string
   onCustomerPhoneChange: (phone: string) => void
+  customerEmail: string
+  onCustomerEmailChange: (email: string) => void
+  deliveryAddress: string
+  onDeliveryAddressChange: (address: string) => void
   notes: string
   onNotesChange: (notes: string) => void
   onCheckout: () => void
@@ -39,6 +43,10 @@ export default function SalesCart({
   onCustomerNameChange,
   customerPhone,
   onCustomerPhoneChange,
+  customerEmail,
+  onCustomerEmailChange,
+  deliveryAddress,
+  onDeliveryAddressChange,
   notes,
   onNotesChange,
   onCheckout,
@@ -125,6 +133,22 @@ export default function SalesCart({
             className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             value={customerPhone}
             onChange={(e) => onCustomerPhoneChange(e.target.value)}
+            disabled={isProcessing}
+          />
+          <input
+            type="email"
+            placeholder="Customer email (optional)"
+            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            value={customerEmail}
+            onChange={(e) => onCustomerEmailChange(e.target.value)}
+            disabled={isProcessing}
+          />
+          <textarea
+            placeholder="Delivery address (for credit orders)"
+            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            rows={2}
+            value={deliveryAddress}
+            onChange={(e) => onDeliveryAddressChange(e.target.value)}
             disabled={isProcessing}
           />
         </div>
