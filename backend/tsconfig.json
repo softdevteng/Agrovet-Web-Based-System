@@ -26,6 +26,15 @@
       "@config/*": ["src/config/*"]
     }
   },
+  "ts-node": {
+    "esm": true,
+    "experimentalEsm": true,
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "ESNext",
+      "moduleResolution": "node"
+    }
+  },
   "include": ["src", "database"],
   "exclude": ["node_modules", "dist"]
 }

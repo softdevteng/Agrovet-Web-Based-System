@@ -1,11 +1,13 @@
 import { Router } from 'express'
 import { inventoryController } from '../controllers/inventoryController.js'
 import { authenticate } from '../middleware/auth.js'
+import { authorizeRole } from '../middleware/roleAuth.js'
 
 const router = Router()
 
-// All inventory routes require authentication
+// All inventory routes require authentication and attendant/admin role
 router.use(authenticate)
+router.use(authorizeRole('attendant', 'admin'))
 
 // Product routes
 router.get('/products', inventoryController.getProducts)

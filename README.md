@@ -6,15 +6,16 @@ A comprehensive, professional web application for managing an agrovet shop with 
 
 SK AGROVET is a full-stack web application designed specifically for agricultural veterinary shops operating in East Africa. It combines traditional retail sales management with specialized modules for AI services, making it the complete solution for modern agrovets.
 
-### Key Features
+### ✨ Key Features
 - **Dashboard**: Real-time overview of sales, inventory alerts, and AI appointments
-- **Inventory Management**: Batch tracking for Seeds, Fertilizers, Animal Feeds, Pesticides, and Veterinary Medicine
-- **Point of Sale (POS)**: M-Pesa and Cash payment integration
+- **Inventory Management**: Product tracking with buying price and profit calculation
+- **Point of Sale (POS)**: M-Pesa and Cash payment integration with profit tracking
 - **AI Service Module**: Semen tank inventory, farmer database, service logs
 - **Veterinary Consultations**: Farm visits, prescriptions, and clinical observations
 - **Credit Management**: Track farmers buying on credit
-- **Knowledge Base**: Best practices and dosage calculators
-- **User Roles**: Admin, Clerk/Attendant, and AI Technician/Vet access levels
+- **Role-Based Access**: Admin, Attendant (Shop), and Vet access levels
+- **Responsive Design**: Works perfectly on phones, tablets, and desktops
+- **Email OTP**: Secure account verification with email OTP
 
 ## 🎨 Visual Design
 
@@ -31,22 +32,37 @@ SK AGROVET is a full-stack web application designed specifically for agricultura
 ```
 SK AGROVET WEB BASED SYSTEM/
 ├── frontend/                 # React.js + TypeScript UI
+│   ├── src/
+│   │   ├── pages/            # Page components
+│   │   ├── components/       # UI components
+│   │   ├── store/            # Redux store
+│   │   └── utils/            # Helper functions
 ├── backend/                  # Node.js + Express API
-├── database/                 # PostgreSQL schemas
-├── docs/                     # Documentation
-└── README.md
+│   ├── src/
+│   │   ├── controllers/      # Request handlers
+│   │   ├── services/         # Business logic
+│   │   ├── routes/           # API routes
+│   │   └── middleware/       # Authentication & validation
+│   └── database/
+│       ├── migrations/       # Database schema
+│       └── seeds/            # Initial data
+├── docs/                     # Additional documentation
+├── PRODUCTION_SETUP.md       # Production deployment guide
+├── netlify.toml              # Netlify configuration
+└── README.md                 # This file
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm/yarn
+- Node.js 18+ LTS and npm/yarn
 - PostgreSQL 12+
 - Git
+- Gmail account (for email OTP)
 
 ### Installation
 
-#### Backend Setup
+#### 1. Backend Setup
 ```bash
 cd backend
 npm install
@@ -158,8 +174,7 @@ See [docs/](docs/) folder for:
 ## 📞 Support & Contact
 
 For issues, feature requests, or inquiries contact:
-- Email: support@skagrovet.com
-- Phone: +254 XXX XXX XXX
+- Phone: +254 720438768 / +254724621145
 
 ## 📄 License
 

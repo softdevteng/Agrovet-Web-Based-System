@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import axios from 'axios'
+import apiClient from '../utils/apiClient'
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL = 'http://localhost:8000/api'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -38,7 +38,7 @@ export default function Login() {
 
     try {
       // Call backend login endpoint
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+      const response = await apiClient.post('/auth/login', {
         email,
         password
       })
@@ -48,11 +48,15 @@ export default function Login() {
         localStorage.setItem('token', response.data.token)
         localStorage.setItem('user', JSON.stringify(response.data.user))
         
-        // Set default axios header for future requests
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
-        
-        // Redirect to dashboard
-        navigate('/dashboard')
+        // Redirect based on role
+        const userRole = response.data.user.role
+        if (userRole === 'vet') {
+          navigate('/ai-services')
+        } else if (userRole === 'attendant') {
+          navigate('/inventory')
+        } else {
+          navigate('/dashboard')
+        }
       }
     } catch (err: any) {
       setError(

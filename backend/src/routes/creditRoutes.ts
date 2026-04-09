@@ -4,7 +4,7 @@ import { authenticate } from '../middleware/auth.js'
 
 const router = Router()
 
-// All credit routes require authentication
+// All credit routes require authentication (attendant and admin can manage credits)
 router.use(authenticate)
 
 // Ledger routes

@@ -33,6 +33,7 @@ async function runMigrations() {
         sku VARCHAR(100) UNIQUE NOT NULL,
         category VARCHAR(50) NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
+        cost_price DECIMAL(10, 2) DEFAULT 0,
         quantity INTEGER NOT NULL DEFAULT 0,
         reorder_level INTEGER NOT NULL DEFAULT 10,
         unit VARCHAR(50),
@@ -151,12 +152,30 @@ async function runMigrations() {
         discount DECIMAL(10, 2) DEFAULT 0,
         tax DECIMAL(10, 2) DEFAULT 0,
         total DECIMAL(10, 2) NOT NULL,
+        cost_total DECIMAL(10, 2) DEFAULT 0,
+        profit DECIMAL(10, 2) DEFAULT 0,
         payment_method VARCHAR(50),
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `)
     console.log('✓ Created sales_transactions table')
+
+    // Create sales items table (for tracking individual items in a sale)
+    await query(`
+      CREATE TABLE IF NOT EXISTS sales_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sale_id UUID NOT NULL REFERENCES sales_transactions(id) ON DELETE CASCADE,
+        product_id UUID NOT NULL REFERENCES products(id),
+        quantity INTEGER NOT NULL,
+        unit_price DECIMAL(10, 2) NOT NULL,
+        cost_price DECIMAL(10, 2) NOT NULL,
+        line_total DECIMAL(10, 2) NOT NULL,
+        line_profit DECIMAL(10, 2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created sales_items table')
 
     // Create veterinary consultations table
     await query(`
@@ -211,6 +230,9 @@ async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_ai_services_farmer_id ON ai_services(farmer_id);
       CREATE INDEX IF NOT EXISTS idx_ai_services_service_date ON ai_services(service_date);
       CREATE INDEX IF NOT EXISTS idx_sales_transactions_date ON sales_transactions(created_at);
+      CREATE INDEX IF NOT EXISTS idx_sales_transactions_attendant ON sales_transactions(attendant_id);
+      CREATE INDEX IF NOT EXISTS idx_sales_items_sale_id ON sales_items(sale_id);
+      CREATE INDEX IF NOT EXISTS idx_sales_items_product_id ON sales_items(product_id);
       CREATE INDEX IF NOT EXISTS idx_credit_ledger_farmer_id ON credit_ledger(farmer_id);
     `)
     console.log('✓ Created database indices')

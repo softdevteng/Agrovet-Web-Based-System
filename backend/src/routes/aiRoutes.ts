@@ -1,11 +1,13 @@
 import { Router } from 'express'
 import { aiController } from '../controllers/aiController.js'
 import { authenticate } from '../middleware/auth.js'
+import { authorizeRole } from '../middleware/roleAuth.js'
 
 const router = Router()
 
-// All AI routes require authentication
+// All AI routes require authentication and vet/admin role
 router.use(authenticate)
+router.use(authorizeRole('vet', 'admin'))
 
 // Semen inventory
 router.get('/semen', aiController.getSemenInventory)

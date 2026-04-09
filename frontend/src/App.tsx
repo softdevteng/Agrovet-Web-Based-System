@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { store } from './store'
+import { VetRoute, AttendantRoute, AnyAuthRoute } from './components/PrivateRoute'
 
 // Pages
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
@@ -14,6 +15,7 @@ const Reports = React.lazy(() => import('./pages/Reports'))
 const Login = React.lazy(() => import('./pages/Login'))
 const Register = React.lazy(() => import('./pages/Register'))
 const VerifyAccount = React.lazy(() => import('./pages/VerifyAccount'))
+const Unauthorized = React.lazy(() => import('./pages/Unauthorized'))
 
 export default function App() {
   return (
@@ -32,17 +34,81 @@ export default function App() {
           }
         >
           <Routes>
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-account" element={<VerifyAccount />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/pos" element={<POS />} />
-            <Route path="/sales-history" element={<SalesHistory />} />
-            <Route path="/ai-services" element={<AIServices />} />
-            <Route path="/veterinary" element={<Veterinary />} />
-            <Route path="/reports" element={<Reports />} />
+            
+            {/* Error Routes */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            
+            {/* Protected Routes - Any authenticated user */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <AnyAuthRoute>
+                  <Dashboard />
+                </AnyAuthRoute>
+              } 
+            />
+            
+            {/* Attendant Routes - Shop/POS related */}
+            <Route 
+              path="/inventory" 
+              element={
+                <AttendantRoute>
+                  <Inventory />
+                </AttendantRoute>
+              } 
+            />
+            <Route 
+              path="/pos" 
+              element={
+                <AttendantRoute>
+                  <POS />
+                </AttendantRoute>
+              } 
+            />
+            <Route 
+              path="/sales-history" 
+              element={
+                <AttendantRoute>
+                  <SalesHistory />
+                </AttendantRoute>
+              } 
+            />
+            
+            {/* Vet Routes - Veterinary/AI Services */}
+            <Route 
+              path="/ai-services" 
+              element={
+                <VetRoute>
+                  <AIServices />
+                </VetRoute>
+              } 
+            />
+            <Route 
+              path="/veterinary" 
+              element={
+                <VetRoute>
+                  <Veterinary />
+                </VetRoute>
+              } 
+            />
+            
+            {/* Reports - Any authenticated user can view */}
+            <Route 
+              path="/reports" 
+              element={
+                <AnyAuthRoute>
+                  <Reports />
+                </AnyAuthRoute>
+              } 
+            />
+            
+            {/* Default route */}
             <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </React.Suspense>
       </Router>

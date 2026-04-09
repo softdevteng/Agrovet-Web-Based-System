@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, User, Phone, MapPin } from 'lucide-react'
-import axios from 'axios'
+import apiClient from '../utils/apiClient'
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL = 'http://localhost:8000/api'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -57,7 +57,7 @@ export default function Register() {
 
     try {
       // Call backend register endpoint
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+      const response = await apiClient.post('/auth/register', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,

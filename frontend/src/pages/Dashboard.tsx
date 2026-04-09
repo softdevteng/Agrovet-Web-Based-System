@@ -1,18 +1,27 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
 import StatCard from '@/components/common/StatCard'
 import Alert from '@/components/common/Alert'
-import SalesChart from '@/components/dashboard/SalesChart'
 import InventoryBreakdown from '@/components/dashboard/InventoryBreakdown'
 import InventoryAlerts from '@/components/dashboard/InventoryAlerts'
 import UpcomingAppointments from '@/components/dashboard/UpcomingAppointments'
 import { ShoppingCart, Package, Users, Zap, TrendingUp } from 'lucide-react'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [alerts, setAlerts] = React.useState([
     { id: 1, type: 'warning' as const, title: 'Low Stock Alert', message: '8 products below reorder level' },
     { id: 2, type: 'info' as const, title: 'AI Service Reminder', message: 'Pregnancy follow-up due for 3 cows' },
   ])
+
+  // Get user role to conditionally show/hide analytics
+  const userString = localStorage.getItem('user')
+  const user = userString ? JSON.parse(userString) : null
+  const userRole = user?.role || ''
+  
+  const canViewSalesAnalytics = userRole === 'admin' || userRole === 'attendant'
+  const canViewInventoryAnalytics = userRole === 'admin' || userRole === 'attendant'
 
   return (
     <Layout>
@@ -83,12 +92,13 @@ export default function Dashboard() {
         </div>
 
         {/* Charts and Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Charts */}
-          <div className="lg:col-span-2 space-y-6">
-            <SalesChart />
-            <InventoryBreakdown />
-          </div>
+        <div className={`grid grid-cols-1 ${canViewSalesAnalytics || canViewInventoryAnalytics ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6`}>
+          {/* Left Column - Charts (Only for Attendant/Admin) */}
+          {canViewInventoryAnalytics && (
+            <div className="lg:col-span-2 space-y-6">
+              <InventoryBreakdown />
+            </div>
+          )}
 
           {/* Right Column - Quick Overview */}
           <div className="space-y-6">
@@ -114,16 +124,28 @@ export default function Dashboard() {
             <div className="card">
               <h3 className="text-lg font-semibold text-neutral-900 mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <button className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-medium transition-colors">
+                <button 
+                  onClick={() => navigate('/pos')}
+                  className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-primary-100 text-neutral-900 font-medium transition-colors"
+                >
                   + New Sale
                 </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-medium transition-colors">
+                <button 
+                  onClick={() => navigate('/inventory')}
+                  className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-primary-100 text-neutral-900 font-medium transition-colors"
+                >
                   + Add Product
                 </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-medium transition-colors">
+                <button 
+                  onClick={() => navigate('/ai-services')}
+                  className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-primary-100 text-neutral-900 font-medium transition-colors"
+                >
                   + Record AI Service
                 </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-medium transition-colors">
+                <button 
+                  onClick={() => navigate('/veterinary')}
+                  className="w-full text-left px-4 py-3 rounded-lg bg-neutral-50 hover:bg-primary-100 text-neutral-900 font-medium transition-colors"
+                >
                   + Schedule Appointment
                 </button>
               </div>

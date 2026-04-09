@@ -4,7 +4,7 @@ import { authenticate } from '../middleware/auth.js'
 
 const router = Router()
 
-// All farmer routes require authentication
+// All farmer routes require authentication (all roles can view farmers)
 router.use(authenticate)
 
 // Farmer routes

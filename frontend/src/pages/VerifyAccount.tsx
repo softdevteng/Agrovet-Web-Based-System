@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Mail, MessageSquare, CheckCircle } from 'lucide-react'
-import axios from 'axios'
+import apiClient from '../utils/apiClient'
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL = 'http://localhost:8000/api'
 
 export default function VerifyAccount() {
   const navigate = useNavigate()
@@ -50,7 +50,7 @@ export default function VerifyAccount() {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/verify-code`, {
+      const response = await apiClient.post('/auth/verify-code', {
         email,
         code: verificationCode
       })
@@ -82,7 +82,7 @@ export default function VerifyAccount() {
     setResending(true)
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/resend-code`, {
+      const response = await apiClient.post('/auth/resend-code', {
         email,
         method
       })
