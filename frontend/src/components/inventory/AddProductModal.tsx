@@ -15,6 +15,7 @@ export interface ProductFormData {
   sku: string
   category: string
   price: number
+  cost_price: number
   quantity: number
   unit: string
   reorderLevel: number
@@ -26,6 +27,7 @@ const initialFormData: ProductFormData = {
   sku: '',
   category: '',
   price: 0,
+  cost_price: 0,
   quantity: 0,
   unit: 'units',
   reorderLevel: 10,
@@ -63,6 +65,8 @@ export default function AddProductModal({
     if (!formData.sku.trim()) newErrors.sku = 'SKU is required'
     if (!formData.category) newErrors.category = 'Category is required'
     if (formData.price <= 0) newErrors.price = 'Price must be greater than 0'
+    if (formData.cost_price < 0) newErrors.cost_price = 'Buying price cannot be negative'
+    if (formData.cost_price >= formData.price) newErrors.cost_price = 'Buying price must be less than selling price'
     if (formData.quantity < 0) newErrors.quantity = 'Quantity cannot be negative'
     if (!formData.unit.trim()) newErrors.unit = 'Unit is required'
 
@@ -174,7 +178,7 @@ export default function AddProductModal({
             </div>
           </div>
 
-          {/* Category & Price */}
+          {/* Category & Selling Price */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Category *</label>
@@ -243,7 +247,7 @@ export default function AddProductModal({
               {errors.newCategory && <p className="text-red-600 text-xs mt-1">{errors.newCategory}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Price (KES) *</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Selling Price (KES) *</label>
               <input
                 type="number"
                 name="price"
@@ -258,6 +262,38 @@ export default function AddProductModal({
                 disabled={submitting || addingCategory}
               />
               {errors.price && <p className="text-red-600 text-xs mt-1">{errors.price}</p>}
+            </div>
+          </div>
+
+          {/* Buying Price & Profit Margin */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Buying Price (KES) *</label>
+              <input
+                type="number"
+                name="cost_price"
+                value={formData.cost_price || ''}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                  errors.cost_price ? 'border-red-500' : 'border-neutral-200'
+                }`}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                disabled={submitting || addingCategory}
+              />
+              {errors.cost_price && <p className="text-red-600 text-xs mt-1">{errors.cost_price}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Profit Margin per Unit</label>
+              <div className="px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg">
+                <p className="text-lg font-semibold text-primary-600">
+                  KES {formData.price && formData.cost_price ? (formData.price - formData.cost_price).toFixed(2) : '0.00'}
+                </p>
+                <p className="text-xs text-neutral-600">
+                  {formData.price && formData.cost_price ? ((((formData.price - formData.cost_price) / formData.cost_price) * 100).toFixed(1)) : '0'}% margin
+                </p>
+              </div>
             </div>
           </div>
 

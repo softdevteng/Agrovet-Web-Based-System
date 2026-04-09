@@ -7,6 +7,7 @@ interface Product {
   sku: string
   category: string
   price: number
+  cost_price?: number
   quantity: number
   reorderLevel: number
 }
@@ -52,7 +53,13 @@ export default function ProductTable({ products, onEdit, onDelete, isLoading }: 
               Category
             </th>
             <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-              Price
+              Buying Price
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+              Selling Price
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+              Profit/Unit
             </th>
             <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
               Stock
@@ -82,7 +89,20 @@ export default function ProductTable({ products, onEdit, onDelete, isLoading }: 
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-neutral-600">KES {product.cost_price ? product.cost_price.toFixed(2) : '0.00'}</span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <span className="font-medium text-neutral-900">KES {product.price.toFixed(2)}</span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <span className="inline-block px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full mb-1">
+                      KES {product.cost_price ? (product.price - product.cost_price).toFixed(2) : product.price.toFixed(2)}
+                    </span>
+                    <p className="text-xs text-neutral-500">
+                      {product.cost_price ? ((((product.price - product.cost_price) / product.cost_price) * 100).toFixed(1)) : '100'}% margin
+                    </p>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`font-medium ${isLowStock ? 'text-red-600' : 'text-green-600'}`}>

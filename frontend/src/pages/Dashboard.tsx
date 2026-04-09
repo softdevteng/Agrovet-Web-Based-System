@@ -89,6 +89,15 @@ export default function Dashboard() {
             trendValue="+4 pending follow-ups"
             color="blue"
           />
+          <StatCard
+            title="Profit This Month"
+            value="KES 856,450"
+            subtitle="Total margin captured"
+            icon={<TrendingUp size={24} />}
+            trend="up"
+            trendValue="+22.8% from last month"
+            color="green"
+          />
         </div>
 
         {/* Charts and Overview */}
