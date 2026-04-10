@@ -1,4 +1,4 @@
 {
-  "buildCommand": "bash build.sh",
-  "startCommand": "bash start.sh"
+  "buildCommand": "cd backend && npm install && npm run build",
+  "startCommand": "cd backend && npm start"
 }
