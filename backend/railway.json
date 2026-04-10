@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "nixpacks": {
+      "providers": ["nodejs-npm"],
+      "phases": {
+        "build": "npm run build"
+      }
+    }
+  }
+}

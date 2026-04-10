@@ -31,16 +31,22 @@ npm run build
 3. Select your repository: `Agrovet-Web-Based-System`
 4. Select branch: `main`
 
-### C. Configure Build Settings
-1. Railway auto-detects `backend/` folder
-2. **Build Command:** `npm run build`
-3. **Start Command:** `npm start`
-4. **Root Directory:** `backend`
+### C. Configure Build Settings (IMPORTANT)
+Railway auto-detects the repo, but you need to configure it correctly:
+
+1. **In Railway dashboard** → Select your project
+2. **Click on the deployment** (or "Settings")
+3. **Look for build settings** and set:
+   - **Root Directory:** `backend` (IMPORTANT!)
+   - **Build Command:** `npm run build`
+   - **Start Command:** `npm start`
+   - **Node Version:** 18 (or higher)
 
 ### D. Add PostgreSQL Database
 1. In Railway dashboard, click "Add Service"
 2. Select "PostgreSQL"
 3. Railway automatically provides connection string
+4. Copy the connection details
 
 ### E. Set Environment Variables
 In Railway project settings, add:
@@ -115,6 +121,48 @@ curl https://your-railway-url/api/health
 ---
 
 ## 🆘 Troubleshooting
+
+### Railway Build Failed?
+
+**Most Common Issue: Root Directory Not Set**
+
+If you see build error like "Cannot find backend files":
+
+1. **Go to Railway dashboard**
+2. **Click your project** → Select the node service
+3. **Click "Settings"** tab
+4. **Look for "Root Directory"** setting
+5. **Enter:** `backend`
+6. **Save and redeploy** (there's a "Redeploy" button)
+
+**Build Error: "Cannot find module..."**
+
+Solution:
+1. Make sure `npm run build` succeeds locally first:
+   ```bash
+   cd backend
+   npm run build
+   ```
+2. If it works locally but fails on Railway, check:
+   - Root directory is set to `backend`
+   - Node version is 18 or higher
+   - Environment variables are set (see Step E above)
+
+**Build Error: "PORT is undefined"**
+
+Solution: Add to Railway environment variables:
+```
+PORT=8000
+```
+
+**Build Error: "Database connection failed"**
+
+Solution: 
+1. Make sure PostgreSQL service was added
+2. Check DATABASE_URL is set in environment
+3. Railway will provide this automatically
+
+---
 
 ### If Login Still Gives Network Error:
 
