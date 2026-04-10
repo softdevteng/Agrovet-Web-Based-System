@@ -1,9 +1,0 @@
-[build]
-builder = "heroku"
-buildCommand = "cd backend && npm install && npm run build"
-
-[start]
-cmd = "cd backend && npm start"
-
-[env]
-NODE_ENV = "production"
