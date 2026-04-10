@@ -224,4 +224,62 @@ export const authController = {
       res.status(500).json({ message: 'Failed to retrieve test code' })
     }
   },
+
+  async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' })
+      }
+
+      const success = await authService.requestPasswordReset(email)
+
+      if (!success) {
+        // Don't reveal if email exists
+        return res.json({
+          success: true,
+          message: 'If an account exists with this email, a password reset code has been sent',
+        })
+      }
+
+      logger.info(`Password reset requested for ${email}`)
+      res.json({
+        success: true,
+        message: 'Password reset code sent to your email',
+      })
+    } catch (error) {
+      logger.error('Forgot password error:', error)
+      res.status(500).json({ message: 'Failed to process password reset request' })
+    }
+  },
+
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { email, code, newPassword } = req.body
+
+      if (!email || !code || !newPassword) {
+        return res.status(400).json({ message: 'Email, code, and new password are required' })
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' })
+      }
+
+      const success = await authService.resetPassword(email, code, newPassword)
+
+      if (!success) {
+        return res.status(400).json({ message: 'Invalid or expired reset code' })
+      }
+
+      logger.info(`Password reset successful for ${email}`)
+      res.json({
+        success: true,
+        message: 'Password reset successfully. You can now login with your new password.',
+      })
+    } catch (error) {
+      logger.error('Reset password error:', error)
+      res.status(500).json({ message: 'Failed to reset password' })
+    }
+  },
 }

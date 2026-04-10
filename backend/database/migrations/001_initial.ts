@@ -346,6 +346,18 @@ async function runMigrations() {
     `)
     console.log('✓ Created verification_codes table')
 
+    // Create password reset codes table
+    await query(`
+      CREATE TABLE IF NOT EXISTS password_reset_codes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL,
+        code VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created password_reset_codes table')
+
     // Create indices for performance
     await query(`
       CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);

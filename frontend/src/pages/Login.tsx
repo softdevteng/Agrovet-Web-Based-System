@@ -152,9 +152,12 @@ export default function Login() {
               <input type="checkbox" className="w-4 h-4 rounded accent-primary-500" />
               Remember me
             </label>
-            <a href="#" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           {/* Login Button */}

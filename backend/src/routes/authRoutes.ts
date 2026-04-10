@@ -9,6 +9,8 @@ router.post('/login', authController.login)
 router.post('/register', authController.register)
 router.post('/verify-code', authController.verifyCode)
 router.post('/resend-code', authController.resendCode)
+router.post('/forgot-password', authController.forgotPassword)
+router.post('/reset-password', authController.resetPassword)
 
 // Test endpoint - Development only
 router.get('/test/verification-code', authController.getTestVerificationCode)

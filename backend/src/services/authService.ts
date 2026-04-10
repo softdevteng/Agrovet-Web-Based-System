@@ -165,4 +165,74 @@ export const authService = {
   async sendVerificationCode(email: string, code: string, method: string = 'email'): Promise<void> {
     await emailService.sendVerificationCode(email, code, method)
   },
+
+  async requestPasswordReset(email: string): Promise<boolean> {
+    // Check if user exists
+    const user = await this.getUserByEmail(email)
+    if (!user) {
+      return false
+    }
+
+    // Generate and store password reset code
+    const code = this.generateVerificationCode()
+    await this.storePasswordResetCode(email, code)
+
+    // Send code via email
+    await emailService.sendVerificationCode(email, code, 'email')
+
+    logger.info(`Password reset code sent to ${email}`)
+    return true
+  },
+
+  async storePasswordResetCode(email: string, code: string) {
+    // Store code with 15 minute expiration
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
+
+    await query(
+      'DELETE FROM password_reset_codes WHERE email = $1',
+      [email]
+    )
+
+    await query(
+      `INSERT INTO password_reset_codes (email, code, expires_at) 
+       VALUES ($1, $2, $3)`,
+      [email, code, expiresAt]
+    )
+  },
+
+  async verifyPasswordResetCode(email: string, code: string): Promise<boolean> {
+    const result = await query(
+      `SELECT * FROM password_reset_codes 
+       WHERE email = $1 AND code = $2 AND expires_at > NOW()`,
+      [email, code]
+    )
+
+    return result.rows.length > 0
+  },
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<boolean> {
+    // Verify the reset code
+    const isValid = await this.verifyPasswordResetCode(email, code)
+    if (!isValid) {
+      return false
+    }
+
+    // Hash new password
+    const passwordHash = await this.hashPassword(newPassword)
+
+    // Update user password
+    await query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE email = $2',
+      [passwordHash, email]
+    )
+
+    // Delete used code
+    await query(
+      'DELETE FROM password_reset_codes WHERE email = $1',
+      [email]
+    )
+
+    logger.info(`Password reset successful for ${email}`)
+    return true
+  },
 }

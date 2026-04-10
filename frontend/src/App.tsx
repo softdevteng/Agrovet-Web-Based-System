@@ -16,6 +16,7 @@ const Reports = React.lazy(() => import('./pages/Reports'))
 const Login = React.lazy(() => import('./pages/Login'))
 const Register = React.lazy(() => import('./pages/Register'))
 const VerifyAccount = React.lazy(() => import('./pages/VerifyAccount'))
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'))
 const Unauthorized = React.lazy(() => import('./pages/Unauthorized'))
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-account" element={<VerifyAccount />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             
             {/* Error Routes */}
             <Route path="/unauthorized" element={<Unauthorized />} />
