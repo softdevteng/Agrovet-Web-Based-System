@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { authService } from '../services/authService.js'
+import { emailService } from '../utils/emailService.js'
 import { logger } from '../middleware/logger.js'
 
 export const authController = {
@@ -191,6 +192,36 @@ export const authController = {
     } catch (error) {
       logger.error('Get users error:', error)
       res.status(500).json({ message: 'Failed to get users' })
+    }
+  },
+
+  // Test endpoint - GET verification code for development/testing
+  async getTestVerificationCode(req: Request, res: Response) {
+    try {
+      // Only available in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ message: 'This endpoint is not available in production' })
+      }
+
+      const { email } = req.query
+      if (!email) {
+        return res.status(400).json({ message: 'Email query parameter is required' })
+      }
+
+      const code = (emailService as any).getVerificationCodeForTesting(email as string)
+      if (!code) {
+        return res.status(404).json({ message: 'No verification code found for this email' })
+      }
+
+      res.json({
+        success: true,
+        email,
+        code,
+        message: '⚠️ THIS IS A TEST ENDPOINT - Only use in development!',
+      })
+    } catch (error) {
+      logger.error('Get test code error:', error)
+      res.status(500).json({ message: 'Failed to retrieve test code' })
     }
   },
 }

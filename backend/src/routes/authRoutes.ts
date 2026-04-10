@@ -10,6 +10,9 @@ router.post('/register', authController.register)
 router.post('/verify-code', authController.verifyCode)
 router.post('/resend-code', authController.resendCode)
 
+// Test endpoint - Development only
+router.get('/test/verification-code', authController.getTestVerificationCode)
+
 // Protected routes
 router.get('/profile', authenticate, authController.getProfile)
 router.put('/profile', authenticate, authController.updateProfile)

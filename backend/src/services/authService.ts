@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import nodemailer from 'nodemailer'
 import { query } from '../config/database.js'
 import { logger } from '../middleware/logger.js'
+import { emailService } from '../utils/emailService.js'
 
 interface LoginPayload {
   userId: string
@@ -163,31 +163,6 @@ export const authService = {
   },
 
   async sendVerificationCode(email: string, code: string, method: string = 'email'): Promise<void> {
-    if (method === 'email') {
-      // send via nodemailer using Gmail
-      try {
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        })
-
-        const info = await transporter.sendMail({
-          from: process.env.EMAIL_USER,
-          to: email,
-          subject: 'Your SK AGROVET Verification Code',
-          text: `Your verification code is: ${code}`,
-        })
-        logger.info(`Verification email sent to ${email}: ${info.messageId}`)
-      } catch (err) {
-        logger.error('Email send error, falling back to console:', err)
-        console.log(`Verification code for ${email}: ${code}`)
-      }
-    } else if (method === 'phone') {
-      // TODO: Implement SMS sending using Twilio or similar service
-      console.log(`SMS code for ${email}: ${code}`)
-    }
+    await emailService.sendVerificationCode(email, code, method)
   },
 }
