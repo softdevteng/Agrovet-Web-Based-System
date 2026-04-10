@@ -1,5 +1,0 @@
-[build]
-builder = "heroku"
-
-[env]
-NODE_ENV = "production"
