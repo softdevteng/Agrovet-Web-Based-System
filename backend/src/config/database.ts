@@ -2,13 +2,27 @@ import { Pool } from 'pg'
 // PoolClient type imported separately for TypeScript only
 import type { PoolClient } from 'pg'
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'Mw@ng!001.',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'sk_agrovet',
-})
+// Support both DATABASE_URL and individual env variables
+let poolConfig: any
+
+if (process.env.DATABASE_URL) {
+  // Railway PostgreSQL plugin provides DATABASE_URL
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  }
+} else {
+  // Local development configuration
+  poolConfig = {
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'Mw@ng!001.',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'sk_agrovet',
+  }
+}
+
+const pool = new Pool(poolConfig)
 
 pool.on('error', (err: Error) => {
   console.error('Unexpected error on idle client', err)
