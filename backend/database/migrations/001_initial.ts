@@ -217,20 +217,27 @@ async function runMigrations() {
     await query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        sale_id UUID NOT NULL REFERENCES sales_transactions(id) ON DELETE CASCADE,
+        sale_id UUID REFERENCES sales_transactions(id) ON DELETE SET NULL,
         invoice_number VARCHAR(50) UNIQUE NOT NULL,
         customer_name VARCHAR(255) NOT NULL,
         customer_phone VARCHAR(20),
         customer_email VARCHAR(255),
+        customer_address TEXT,
         items_count INTEGER NOT NULL,
         subtotal DECIMAL(10, 2) NOT NULL,
         discount DECIMAL(10, 2) DEFAULT 0,
+        discount_percent DECIMAL(5, 2) DEFAULT 0,
         tax DECIMAL(10, 2) NOT NULL,
         total DECIMAL(10, 2) NOT NULL,
         payment_method VARCHAR(50),
+        payment_status VARCHAR(50) DEFAULT 'draft',
         notes TEXT,
+        email_sent BOOLEAN DEFAULT false,
+        email_sent_at TIMESTAMP,
+        recurring_template_id UUID,
         generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `)
     console.log('✓ Created invoices table')
@@ -275,6 +282,58 @@ async function runMigrations() {
     `)
     console.log('✓ Created company_settings table')
 
+    // Create recurring invoice templates table
+    await query(`
+      CREATE TABLE IF NOT EXISTS recurring_invoice_templates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        template_name VARCHAR(255) NOT NULL,
+        customer_name VARCHAR(255) NOT NULL,
+        customer_phone VARCHAR(20),
+        customer_email VARCHAR(255),
+        customer_address TEXT,
+        items JSONB NOT NULL,
+        discount_percent DECIMAL(5, 2) DEFAULT 0,
+        notes TEXT,
+        frequency VARCHAR(50) NOT NULL,
+        next_invoice_date DATE,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created recurring_invoice_templates table')
+
+    // Create invoice email logs table
+    await query(`
+      CREATE TABLE IF NOT EXISTS invoice_email_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+        recipient_email VARCHAR(255) NOT NULL,
+        sent_at TIMESTAMP NOT NULL,
+        status VARCHAR(50) DEFAULT 'sent',
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created invoice_email_logs table')
+
+    // Create sales reports table
+    await query(`
+      CREATE TABLE IF NOT EXISTS sales_reports (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        report_date DATE NOT NULL,
+        total_sales DECIMAL(10, 2) DEFAULT 0,
+        total_invoices DECIMAL(10, 2) DEFAULT 0,
+        total_discounts DECIMAL(10, 2) DEFAULT 0,
+        total_transactions INTEGER DEFAULT 0,
+        total_items_sold INTEGER DEFAULT 0,
+        total_profit DECIMAL(10, 2) DEFAULT 0,
+        payment_breakdown JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    console.log('✓ Created sales_reports table')
+
     // Create verification codes table
     await query(`
       CREATE TABLE IF NOT EXISTS verification_codes (
@@ -301,9 +360,16 @@ async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_credit_ledger_farmer_id ON credit_ledger(farmer_id);
       CREATE INDEX IF NOT EXISTS idx_invoices_sale_id ON invoices(sale_id);
       CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON invoices(invoice_number);
+      CREATE INDEX IF NOT EXISTS idx_invoices_customer_email ON invoices(customer_email);
+      CREATE INDEX IF NOT EXISTS idx_invoices_payment_status ON invoices(payment_status);
+      CREATE INDEX IF NOT EXISTS idx_invoices_created_at ON invoices(created_at);
       CREATE INDEX IF NOT EXISTS idx_delivery_notes_sale_id ON delivery_notes(sale_id);
       CREATE INDEX IF NOT EXISTS idx_delivery_notes_delivery_number ON delivery_notes(delivery_number);
       CREATE INDEX IF NOT EXISTS idx_delivery_notes_status ON delivery_notes(delivery_status);
+      CREATE INDEX IF NOT EXISTS idx_recurring_templates_active ON recurring_invoice_templates(is_active);
+      CREATE INDEX IF NOT EXISTS idx_recurring_templates_next_date ON recurring_invoice_templates(next_invoice_date);
+      CREATE INDEX IF NOT EXISTS idx_invoice_emails_invoice_id ON invoice_email_logs(invoice_id);
+      CREATE INDEX IF NOT EXISTS idx_sales_reports_date ON sales_reports(report_date);
     `)
     console.log('✓ Created database indices')
 
