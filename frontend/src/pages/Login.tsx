@@ -3,8 +3,6 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import apiClient from '../utils/apiClient'
 
-const API_BASE_URL = 'http://localhost:8000/api'
-
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
