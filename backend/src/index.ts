@@ -2,18 +2,22 @@ import app from './app.js'
 import { query } from './config/database.js'
 import { logger } from './middleware/logger.js'
 
-const PORT = process.env.BACKEND_PORT || 5000
+// Railway sets PORT environment variable, fallback to 5000 for local development
+const PORT = process.env.PORT || process.env.BACKEND_PORT || 5000
 
 async function startServer() {
   try {
-    // Test database connection
-    console.log('Testing database connection...')
-    const result = await query('SELECT NOW()')
-    console.log('✅ Database connected:', result.rows[0])
+    // Log environment for debugging
+    console.log('📋 Environment Configuration:')
+    console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`)
+    console.log(`   PORT: ${PORT}`)
+    console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? '✅ SET' : '❌ NOT SET'}`)
+    console.log(`   DB_HOST: ${process.env.DB_HOST || 'localhost'}`)
+    console.log('')
 
-    // Start Express server
-    app.listen(PORT, () => {
-      logger.info(`🚀 SK AGROVET Backend running on http://localhost:${PORT}`)
+    // Start Express server FIRST (don't wait for database)
+    const server = app.listen(PORT, () => {
+      logger.info(`🚀 SK AGROVET Backend running on port ${PORT}`)
       logger.info(`📊 Health check: http://localhost:${PORT}/api/health`)
       console.log(`
 ╔════════════════════════════════════════════════════════╗
@@ -34,6 +38,17 @@ async function startServer() {
 ╚════════════════════════════════════════════════════════╝
       `)
     })
+
+    // Test database connection in background (don't block startup)
+    console.log('⏳ Testing database connection...')
+    query('SELECT NOW()')
+      .then((result) => {
+        console.log('✅ Database connected:', result.rows[0])
+      })
+      .catch((error) => {
+        console.error('⚠️ Database connection failed - API will not work properly:', error.message)
+        console.error('   Make sure PostgreSQL is running and DATABASE_URL is set correctly')
+      })
   } catch (error) {
     console.error('❌ Failed to start server:', error)
     process.exit(1)

@@ -6,12 +6,14 @@ import type { PoolClient } from 'pg'
 let poolConfig: any
 
 if (process.env.DATABASE_URL) {
+  console.log('🔗 Using DATABASE_URL for PostgreSQL connection...')
   // Railway PostgreSQL plugin provides DATABASE_URL
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   }
 } else {
+  console.log('🔧 Using individual DB environment variables...')
   // Local development configuration
   poolConfig = {
     user: process.env.DB_USER || 'postgres',
@@ -21,6 +23,11 @@ if (process.env.DATABASE_URL) {
     database: process.env.DB_NAME || 'sk_agrovet',
   }
 }
+
+console.log('📌 Database Configuration:')
+console.log(`   Connection String: ${poolConfig.connectionString ? '✅ Using URL' : `❌ Using host/port: ${poolConfig.host}:${poolConfig.port}`}`)
+console.log(`   Database Name: ${poolConfig.connectionString ? 'auto' : poolConfig.database}`)
+console.log('')
 
 const pool = new Pool(poolConfig)
 
