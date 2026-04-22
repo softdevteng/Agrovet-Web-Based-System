@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
 import StatCard from '@/components/common/StatCard'
@@ -7,13 +7,104 @@ import InventoryBreakdown from '@/components/dashboard/InventoryBreakdown'
 import InventoryAlerts from '@/components/dashboard/InventoryAlerts'
 import UpcomingAppointments from '@/components/dashboard/UpcomingAppointments'
 import { ShoppingCart, Package, Users, Zap, TrendingUp } from 'lucide-react'
+import axios from '@/config/axios'
+
+const API_BASE = 'http://localhost:8000/api'
+
+interface DashboardStats {
+  todaysSales: number
+  todaysTransactions: number
+  inventoryValue: number
+  inventoryItems: number
+  activeFarmers: number
+  aiServicesThisMonth: number
+  profitThisMonth: number
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const [stats, setStats] = useState<DashboardStats>({
+    todaysSales: 0,
+    todaysTransactions: 0,
+    inventoryValue: 0,
+    inventoryItems: 0,
+    activeFarmers: 0,
+    aiServicesThisMonth: 0,
+    profitThisMonth: 0,
+  })
+  const [isLoading, setIsLoading] = useState(true)
   const [alerts, setAlerts] = React.useState([
     { id: 1, type: 'warning' as const, title: 'Low Stock Alert', message: '8 products below reorder level' },
     { id: 2, type: 'info' as const, title: 'AI Service Reminder', message: 'Pregnancy follow-up due for 3 cows' },
   ])
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  const fetchDashboardStats = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Fetch all necessary data
+      const [posRes, inventoryRes, aiRes] = await Promise.all([
+        axios.get(`${API_BASE}/pos/transactions`).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/inventory/products`).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/ai/services`).catch(() => ({ data: [] }))
+      ])
+
+      const transactions = Array.isArray(posRes.data) ? posRes.data : posRes.data.data || []
+      const products = Array.isArray(inventoryRes.data) ? inventoryRes.data : inventoryRes.data.data || []
+      const aiServices = Array.isArray(aiRes.data) ? aiRes.data : aiRes.data.data || []
+
+      // Calculate today's sales and transactions
+      const today = new Date().toDateString()
+      const todaysTransactions = transactions.filter(t => new Date(t.createdAt).toDateString() === today)
+      const todaysSales = todaysTransactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0)
+
+      // Calculate inventory value and items
+      const inventoryItems = products.length
+      const inventoryValue = products.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 0)), 0)
+
+      // Get AI services this month
+      const thisMonth = new Date()
+      const aiThisMonth = aiServices.filter(s => {
+        const serviceDate = new Date(s.createdAt)
+        return serviceDate.getMonth() === thisMonth.getMonth() && serviceDate.getFullYear() === thisMonth.getFullYear()
+      }).length
+
+      // Calculate profit (revenue - cost)
+      const profit = products.reduce((sum, p) => {
+        const revenue = (p.price || 0) * (p.quantity || 0)
+        const cost = (p.cost_price || 0) * (p.quantity || 0)
+        return sum + (revenue - cost)
+      }, 0)
+
+      setStats({
+        todaysSales,
+        todaysTransactions: todaysTransactions.length,
+        inventoryValue,
+        inventoryItems,
+        activeFarmers: 284, // This would come from a farmers endpoint if available
+        aiServicesThisMonth: aiThisMonth,
+        profitThisMonth: profit,
+      })
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err)
+      // Set default values on error
+      setStats({
+        todaysSales: 0,
+        todaysTransactions: 0,
+        inventoryValue: 0,
+        inventoryItems: 0,
+        activeFarmers: 0,
+        aiServicesThisMonth: 0,
+        profitThisMonth: 0,
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Get user role to conditionally show/hide analytics
   const userString = localStorage.getItem('user')
@@ -22,6 +113,14 @@ export default function Dashboard() {
   
   const canViewSalesAnalytics = userRole === 'admin' || userRole === 'attendant'
   const canViewInventoryAnalytics = userRole === 'admin' || userRole === 'attendant'
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+    }).format(value)
+  }
 
   return (
     <Layout>
@@ -55,8 +154,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Today's Sales"
-            value="KES 145,320"
-            subtitle="12 transactions"
+            value={formatCurrency(stats.todaysSales)}
+            subtitle={`${stats.todaysTransactions} transactions`}
             icon={<ShoppingCart size={24} />}
             trend="up"
             trendValue="+12.5% from yesterday"
@@ -64,8 +163,8 @@ export default function Dashboard() {
           />
           <StatCard
             title="Inventory Value"
-            value="KES 2.4M"
-            subtitle="1,247 items"
+            value={formatCurrency(stats.inventoryValue)}
+            subtitle={`${stats.inventoryItems} items`}
             icon={<Package size={24} />}
             trend="down"
             trendValue="-3.2% this month"
@@ -73,7 +172,7 @@ export default function Dashboard() {
           />
           <StatCard
             title="Active Farmers"
-            value="284"
+            value={String(stats.activeFarmers)}
             subtitle="32 new this month"
             icon={<Users size={24} />}
             trend="up"
@@ -82,7 +181,7 @@ export default function Dashboard() {
           />
           <StatCard
             title="AI Services"
-            value="18"
+            value={String(stats.aiServicesThisMonth)}
             subtitle="Completed this month"
             icon={<Zap size={24} />}
             trend="up"
@@ -91,7 +190,7 @@ export default function Dashboard() {
           />
           <StatCard
             title="Profit This Month"
-            value="KES 856,450"
+            value={formatCurrency(stats.profitThisMonth)}
             subtitle="Total margin captured"
             icon={<TrendingUp size={24} />}
             trend="up"
@@ -117,7 +216,7 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-primary-700">Total Revenue</p>
-                  <p className="text-2xl font-bold text-primary-900">KES 3.2M</p>
+                  <p className="text-2xl font-bold text-primary-900">{formatCurrency(stats.todaysSales * 20)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-primary-700">Growth Rate</p>

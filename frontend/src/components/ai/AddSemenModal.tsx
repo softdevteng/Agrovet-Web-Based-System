@@ -14,6 +14,7 @@ export interface SemenFormData {
   bullName: string
   origin: string
   quantity: number
+  price?: number
   expiryDate: string
   tankId: string
   temperature?: number
@@ -25,6 +26,7 @@ const initialFormData: SemenFormData = {
   bullName: '',
   origin: '',
   quantity: 0,
+  price: 0,
   expiryDate: '',
   tankId: '',
   temperature: -196,
@@ -65,6 +67,7 @@ export default function AddSemenModal({ isOpen, onClose, onSubmit, isLoading }: 
     if (!formData.bullName.trim()) newErrors.bullName = 'Bull name is required'
     if (!formData.origin.trim()) newErrors.origin = 'Origin is required'
     if (formData.quantity <= 0) newErrors.quantity = 'Quantity must be greater than 0'
+    if ((formData.price || 0) <= 0) newErrors.price = 'Price must be greater than 0'
     if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required'
     if (!formData.tankId.trim()) newErrors.tankId = 'Tank ID is required'
 
@@ -228,6 +231,24 @@ export default function AddSemenModal({ isOpen, onClose, onSubmit, isLoading }: 
                   disabled={submitting || isLoading}
                 />
                 {errors.quantity && <p className="text-red-600 text-xs mt-1">{errors.quantity}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Price (KES) *</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price || ''}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    errors.price ? 'border-red-500' : 'border-neutral-200'
+                  }`}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  disabled={submitting || isLoading}
+                />
+                {errors.price && <p className="text-red-600 text-xs mt-1">{errors.price}</p>}
               </div>
 
               <div>

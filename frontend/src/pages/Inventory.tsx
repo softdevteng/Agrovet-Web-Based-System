@@ -4,13 +4,13 @@ import ProductTable from '@/components/inventory/ProductTable'
 import AddProductModal, { ProductFormData } from '@/components/inventory/AddProductModal'
 import EditProductModal from '@/components/inventory/EditProductModal'
 import { Plus, Search, Filter, AlertCircle } from 'lucide-react'
-import axios from 'axios'
+import axios from '@/config/axios'
 
 interface Product extends ProductFormData {
   id: string
 }
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = 'http://localhost:8000/api'
 
 export default function Inventory() {
   const [products, setProducts] = useState<Product[]>([])
@@ -58,53 +58,9 @@ export default function Inventory() {
     try {
       setIsLoading(true)
       setError(null)
-      // For now, return mock data since backend might not have real inventory data yet
-      // Once backend is ready, uncomment the real API call:
-      // const response = await axios.get(`${API_BASE}/inventory/products`, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // setProducts(response.data.data || response.data)
-
-      // Mock data for development
-      const mockProducts: Product[] = [
-        {
-          id: '1',
-          name: 'Premium Animal Feed Bags',
-          sku: 'AF-001',
-          category: 'Animal Feed',
-          price: 500,
-          cost_price: 300,
-          quantity: 45,
-          unit: 'bags',
-          reorderLevel: 10,
-          description: 'High-quality animal feed suitable for cattle and goats',
-        },
-        {
-          id: '2',
-          name: 'Organic Fertilizer 50kg',
-          sku: 'FER-002',
-          category: 'Fertilizers',
-          price: 1200,
-          cost_price: 800,
-          quantity: 8,
-          unit: 'bags',
-          reorderLevel: 15,
-          description: 'Organic fertilizer for sustainable farming',
-        },
-        {
-          id: '3',
-          name: 'Cattle Dewormer Tablets',
-          sku: 'MED-003',
-          category: 'Medicines',
-          price: 350,
-          cost_price: 150,
-          quantity: 120,
-          unit: 'units',
-          reorderLevel: 20,
-          description: 'Effective dewormer for cattle',
-        },
-      ]
-      setProducts(mockProducts)
+      
+      const response = await axios.get(`${API_BASE}/inventory/products`)
+      setProducts(response.data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load products')
       console.error('Failed to fetch products:', err)
@@ -115,21 +71,11 @@ export default function Inventory() {
 
   const handleAddProduct = async (data: ProductFormData) => {
     try {
-      // Real API call (uncomment when backend is ready):
-      // const response = await axios.post(`${API_BASE}/inventory/products`, data, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      // })
-      // const newProduct: Product = { id: response.data.id, ...data }
-
-      // Mock implementation
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        ...data,
-      }
-
-      setProducts([...products, newProduct])
+      const response = await axios.post(`${API_BASE}/inventory/products`, data)
+      setProducts([...products, response.data])
       setSuccessMessage('Product added successfully!')
       setTimeout(() => setSuccessMessage(null), 3000)
+      await fetchProducts() // Refresh list
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to add product')
     }
@@ -142,15 +88,11 @@ export default function Inventory() {
 
   const handleUpdateProduct = async (id: string, data: ProductFormData) => {
     try {
-      // Real API call (uncomment when backend is ready):
-      // await axios.put(`${API_BASE}/inventory/products/${id}`, data, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      // })
-
-      // Mock implementation
+      await axios.put(`${API_BASE}/inventory/products/${id}`, data)
       setProducts(products.map((p) => (p.id === id ? { id, ...data } : p)))
       setSuccessMessage('Product updated successfully!')
       setTimeout(() => setSuccessMessage(null), 3000)
+      await fetchProducts() // Refresh list
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update product')
     }
@@ -158,12 +100,7 @@ export default function Inventory() {
 
   const handleDeleteProduct = async (id: string) => {
     try {
-      // Real API call (uncomment when backend is ready):
-      // await axios.delete(`${API_BASE}/inventory/products/${id}`, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      // })
-
-      // Mock implementation
+      await axios.delete(`${API_BASE}/inventory/products/${id}`)
       setProducts(products.filter((p) => p.id !== id))
       setSuccessMessage('Product deleted successfully!')
       setTimeout(() => setSuccessMessage(null), 3000)

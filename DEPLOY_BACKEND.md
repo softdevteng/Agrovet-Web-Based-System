@@ -248,3 +248,13 @@ Database (Railway):        PostgreSQL (auto-managed)
 5. ✅ Test login on https://skagro.netlify.app/login
 
 **Once complete, your deployed app will be fully functional!** 🚀
+
+---
+
+## 🚀 Quick Deployment Script
+
+Run this script to deploy the backend to Railway.app:
+
+```bash
+cd "C:\Users\mwangi\Projects\SK AGROVET WEB BASED SYSTEM\backend" && .\railway-deploy.bat
+```

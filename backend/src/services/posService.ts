@@ -1,4 +1,4 @@
-import { query } from '../config/database.js'
+import { query, getClient } from '../config/database.js'
 
 export const posService = {
   async createTransaction(data: {
@@ -14,7 +14,7 @@ export const posService = {
     notes?: string
   }) {
     // Start transaction
-    const client = await require('../config/database').getClient()
+    const client = await getClient()
     try {
       await client.query('BEGIN')
 

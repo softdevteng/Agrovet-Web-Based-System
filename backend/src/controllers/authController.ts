@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { authService } from '../services/authService.js'
 import { emailService } from '../utils/emailService.js'
+import { query } from '../config/database.js'
 import { logger } from '../middleware/logger.js'
 
 export const authController = {
@@ -77,7 +78,7 @@ export const authController = {
       await authService.sendVerificationCode(email, code, method)
 
       logger.info(`New user registered: ${email}, verification code sent`)
-      res.status(201).json({
+      const responsePayload: any = {
         success: true,
         message: 'Account created successfully. Verification code sent.',
         user: {
@@ -87,7 +88,19 @@ export const authController = {
           fullName: user.full_name,
           role: user.role,
         },
-      })
+      }
+
+      // For development/demo: include verification code in response when email is not configured
+      if (process.env.NODE_ENV !== 'production') {
+        try {
+          const codeRes = await query('SELECT code FROM verification_codes WHERE email = $1 ORDER BY expires_at DESC LIMIT 1', [email])
+          if (codeRes.rows[0]) responsePayload.devVerificationCode = codeRes.rows[0].code
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      res.status(201).json(responsePayload)
     } catch (error) {
       logger.error('Registration error:', error)
       res.status(500).json({ message: 'Registration failed' })

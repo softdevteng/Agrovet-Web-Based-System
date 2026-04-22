@@ -4,7 +4,7 @@ import ProductSelector from '@/components/pos/ProductSelector'
 import SalesCart, { CartItem } from '@/components/pos/SalesCart'
 import ReceiptModal from '@/components/pos/ReceiptModal'
 import { AlertCircle, RotateCcw } from 'lucide-react'
-import axios from 'axios'
+import axios from '@/config/axios'
 
 interface Product {
   id: string
@@ -42,7 +42,7 @@ interface Receipt {
   notes?: string
 }
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = 'http://localhost:8000/api'
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([])
@@ -84,76 +84,14 @@ export default function POS() {
       setIsLoading(true)
       setError(null)
 
-      // Mock data for now - same as inventory
-      const mockProducts: Product[] = [
-        {
-          id: '1',
-          name: 'Premium Animal Feed Bags',
-          sku: 'AF-001',
-          category: 'Animal Feed',
-          price: 500,
-          quantity: 45,
-          unit: 'bags',
-          reorderLevel: 10,
-          description: 'High-quality animal feed suitable for cattle and goats',
-        },
-        {
-          id: '2',
-          name: 'Organic Fertilizer 50kg',
-          sku: 'FER-002',
-          category: 'Fertilizers',
-          price: 1200,
-          quantity: 8,
-          unit: 'bags',
-          reorderLevel: 15,
-          description: 'Organic fertilizer for sustainable farming',
-        },
-        {
-          id: '3',
-          name: 'Cattle Dewormer Tablets',
-          sku: 'MED-003',
-          category: 'Medicines',
-          price: 350,
-          quantity: 120,
-          unit: 'units',
-          reorderLevel: 20,
-          description: 'Effective dewormer for cattle',
-        },
-        {
-          id: '4',
-          name: 'Poultry Layer Feed',
-          sku: 'AF-002',
-          category: 'Animal Feed',
-          price: 2500,
-          quantity: 25,
-          unit: 'bags',
-          reorderLevel: 5,
-          description: 'Specially formulated for laying hens',
-        },
-        {
-          id: '5',
-          name: 'NPK Fertilizer 25-5-5',
-          sku: 'FER-001',
-          category: 'Fertilizers',
-          price: 1500,
-          quantity: 12,
-          unit: 'bags',
-          reorderLevel: 10,
-          description: 'Balanced NPK formula for general crops',
-        },
-        {
-          id: '6',
-          name: 'Antibiotic Injection',
-          sku: 'MED-001',
-          category: 'Medicines',
-          price: 450,
-          quantity: 60,
-          unit: 'bottles',
-          reorderLevel: 15,
-          description: 'Injectable antibiotic for livestock',
-        },
-      ]
-      setProducts(mockProducts)
+          // Fetch real products from API
+          try {
+            const res = await axios.get('/inventory/products')
+            setProducts(Array.isArray(res.data) ? res.data : res.data.data || [])
+          } catch (e) {
+            console.error('Error fetching products for POS:', e)
+            setError(e instanceof Error ? e.message : 'Failed to load products')
+          }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load products')
       console.error('Error fetching products:', err)

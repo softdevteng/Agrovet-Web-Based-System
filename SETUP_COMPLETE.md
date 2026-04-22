@@ -398,6 +398,46 @@ docker-compose -f docker-compose.yml up
    - Run migrations: `npm run db:migrate`
    - Seed sample data: `npm run db:seed`
 
+---
+
+## 🔁 Deploying Frontend to Netlify (quick)
+
+1. Build the frontend locally to verify:
+```bash
+cd frontend
+npm run build
+```
+
+2. Add Netlify config: set environment variable `VITE_API_BASE` to your backend URL (e.g. `https://api.example.com/api`). A sample `netlify.toml` has been added to the `frontend/` folder.
+
+3. Commit and push to your Git repository and connect the repo to Netlify. On Netlify set `VITE_API_BASE` in Site settings → Build & deploy → Environment.
+
+## 🔁 Deploying Backend (recommend Railway / Heroku / VPS)
+
+1. Set environment variables on the host (see `backend/.env.production.example`):
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `CORS_ORIGIN` (set to your Netlify site URL, or `*` to allow all origins)
+- `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` (for production email sending)
+
+2. Build and start on the host:
+```bash
+cd backend
+npm ci
+npm run build
+node dist/index.js
+```
+
+3. Recommended host: Railway (simple PostgreSQL + Node deploy) or Heroku.
+
+## ✅ After Deployment — logging in from another device
+
+1. Deploy backend and set `CORS_ORIGIN` to the full origin of your Netlify site.
+2. Deploy frontend to Netlify and set `VITE_API_BASE` to the backend API root (e.g. `https://api.example.com/api`).
+3. Open the frontend URL on your phone, register, verify (email must be configured), and log in.
+
+If you want, I can prepare a single `deploy.sh` script for your backend host and a `netlify` deploy guide and CI snippets — tell me which host you plan to use and I will add the exact steps and environment variables to set.
+
 5. **Test the Application**
    - Open http://localhost:3000
    - Login with test credentials

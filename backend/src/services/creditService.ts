@@ -1,4 +1,4 @@
-import { query } from '../config/database.js'
+import { query, getClient } from '../config/database.js'
 
 export const creditService = {
   async getFarmerCreditLedger(farmerId: string) {
@@ -19,7 +19,7 @@ export const creditService = {
     description: string
     dueDate?: string
   }) {
-    const client = await require('../config/database').getClient()
+    const client = await getClient()
     try {
       await client.query('BEGIN')
 

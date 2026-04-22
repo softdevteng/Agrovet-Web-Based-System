@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { logger } from './logger.js'
+import { authService } from '../services/authService.js'
 
 export interface AuthRequest extends Request {
   user?: {
@@ -17,15 +18,13 @@ export const authenticate = (req: any, res: Response, next: NextFunction) => {
       return res.status(401).json({ message: 'No token provided' })
     }
 
-    // Token verification happens in utils - this is a placeholder
-    // In production, verify with JWT and attach user to request
-    const mockUser = {
-      userId: 'test-user-id',
-      email: 'test@example.com',
-      role: 'admin',
+    // Verify JWT and attach user to request
+    const payload: any = authService.verifyToken(token)
+    req.user = {
+      userId: payload.userId || payload.id || payload.sub,
+      email: payload.email,
+      role: payload.role,
     }
-
-    req.user = mockUser
     next()
   } catch (error) {
     logger.error('Authentication error:', error)

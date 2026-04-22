@@ -5,7 +5,7 @@ import AddSemenModal, { SemenFormData } from '@/components/ai/AddSemenModal'
 import RecordServiceModal, { ServiceFormData } from '@/components/ai/RecordServiceModal'
 import ServiceReceiptModal from '@/components/ai/ServiceReceiptModal'
 import SemenDetailsModal from '@/components/ai/SemenDetailsModal'
-import axios from 'axios'
+import axios from '@/config/axios'
 
 interface ServiceReceipt {
   receiptId: string
@@ -25,7 +25,7 @@ interface ServiceReceipt {
   notes?: string
 }
 
-const API_BASE = 'http://localhost:5000/api'
+const API_BASE = 'http://localhost:8000/api'
 
 export default function AIServices() {
   const [semenStraws, setSemenStraws] = useState<SemenStraw[]>([])
@@ -57,76 +57,8 @@ export default function AIServices() {
       setIsLoading(true)
       setError(null)
 
-      // Mock data for development - replace with real API call when backend ready
-      const mockSemenStraws: SemenStraw[] = [
-        {
-          id: '1',
-          breed: 'Friesian',
-          bullId: 'BULL-001',
-          bullName: 'Mzuri',
-          origin: 'Imported - Europe',
-          quantity: 45,
-          expiryDate: '2027-03-15',
-          tankId: 'TANK-A1',
-          temperature: -196,
-          status: 'available',
-          createdAt: '2024-09-15T10:30:00Z',
-        },
-        {
-          id: '2',
-          breed: 'Jersey',
-          bullId: 'BULL-002',
-          bullName: 'Gold',
-          origin: 'Local',
-          quantity: 12,
-          expiryDate: '2026-12-01',
-          tankId: 'TANK-A2',
-          temperature: -196,
-          status: 'available',
-          createdAt: '2024-10-20T14:15:00Z',
-        },
-        {
-          id: '3',
-          breed: 'Simmental',
-          bullId: 'BULL-003',
-          bullName: 'Red King',
-          origin: 'Imported - USA',
-          quantity: 8,
-          expiryDate: '2026-06-30',
-          tankId: 'TANK-B1',
-          temperature: -196,
-          status: 'available',
-          createdAt: '2024-08-10T09:45:00Z',
-        },
-        {
-          id: '4',
-          breed: 'Angus',
-          bullId: 'BULL-004',
-          bullName: 'Black Diamond',
-          origin: 'Imported - Australia',
-          quantity: 25,
-          expiryDate: '2028-01-20',
-          tankId: 'TANK-B2',
-          temperature: -196,
-          status: 'available',
-          createdAt: '2024-11-05T11:20:00Z',
-        },
-        {
-          id: '5',
-          breed: 'Ayrshire',
-          bullId: 'BULL-005',
-          bullName: 'Silver Star',
-          origin: 'Local',
-          quantity: 3,
-          expiryDate: '2026-04-15',
-          tankId: 'TANK-C1',
-          temperature: -196,
-          status: 'available',
-          createdAt: '2024-07-22T16:00:00Z',
-        },
-      ]
-
-      setSemenStraws(mockSemenStraws)
+      const response = await axios.get(`${API_BASE}/ai/semen`)
+      setSemenStraws(response.data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load semen straws')
       console.error('Error fetching semen straws:', err)
@@ -137,22 +69,11 @@ export default function AIServices() {
 
   const handleAddSemen = async (data: SemenFormData) => {
     try {
-      // Real API call (uncomment when backend ready):
-      // const response = await axios.post(`${API_BASE}/ai/semen`, data, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      // })
-
-      // Mock implementation
-      const newSemen: SemenStraw = {
-        id: Date.now().toString(),
-        ...data,
-        status: 'available',
-        createdAt: new Date().toISOString(),
-      }
-
-      setSemenStraws([...semenStraws, newSemen])
+      const response = await axios.post(`${API_BASE}/ai/semen`, data)
+      setSemenStraws([...semenStraws, response.data])
       setSuccessMessage('Semen straw added successfully!')
       setTimeout(() => setSuccessMessage(null), 3000)
+      await fetchSemenStraws() // Refresh list
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to add semen straw')
     }
@@ -170,32 +91,11 @@ export default function AIServices() {
 
   const handleRecordService = async (data: ServiceFormData) => {
     try {
-      // Real API call (uncomment when backend ready):
-      // const response = await axios.post(`${API_BASE}/ai/services`, data, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      // })
-
-      // Mock implementation
-      const receiptId = `SK-AI-${String(serviceCounter).padStart(4, '0')}`
-      setServiceCounter(serviceCounter + 1)
-
-      // Update semen quantity
-      setSemenStraws((prev) =>
-        prev.map((s) =>
-          s.id === data.semenStrawId
-            ? {
-                ...s,
-                quantity: Math.max(0, s.quantity - 1),
-                status: s.quantity - 1 <= 0 ? 'used' : 'available',
-              }
-            : s
-        )
-      )
-
-      // Generate receipt
+      const response = await axios.post(`${API_BASE}/ai/services`, data)
+      
       const receipt: ServiceReceipt = {
-        receiptId,
-        timestamp: new Date().toISOString(),
+        receiptId: response.data.receiptId,
+        timestamp: response.data.timestamp,
         bullName: data.bullName,
         breed: data.breed,
         cowId: data.cowId,
@@ -215,6 +115,7 @@ export default function AIServices() {
       setShowReceiptModal(true)
       setShowServiceModal(false)
       setSelectedSemen(null)
+      await fetchSemenStraws() // Refresh list
 
       setSuccessMessage('AI service recorded successfully!')
       setTimeout(() => setSuccessMessage(null), 3000)

@@ -27,11 +27,20 @@ const limiter = rateLimit({
 app.use(limiter)
 
 // CORS configuration
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5000',
-  process.env.CORS_ORIGIN || '',
-].filter((origin) => origin.length > 0)
+// `CORS_ORIGIN` may be a comma-separated list of allowed origins (e.g. https://site.netlify.app,https://example.com)
+const corsEnv = (process.env.CORS_ORIGIN || '').trim()
+let allowedOrigins: string[] = []
+if (corsEnv.length > 0) {
+  // allow '*' to mean any origin
+  if (corsEnv === '*') {
+    allowedOrigins = []
+  } else {
+    allowedOrigins = corsEnv.split(',').map(s => s.trim()).filter(Boolean)
+  }
+} else {
+  // default local dev origins
+  allowedOrigins = ['http://localhost:3000', 'http://localhost:3001']
+}
 
 app.use(
   cors({

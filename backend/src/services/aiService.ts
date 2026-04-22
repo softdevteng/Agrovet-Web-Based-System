@@ -1,4 +1,4 @@
-import { query } from '../config/database.js'
+import { query, getClient } from '../config/database.js'
 
 export const aiService = {
   async getSemenInventory(breed?: string, status?: string, page = 1, limit = 20) {
@@ -83,7 +83,7 @@ export const aiService = {
     cost: number
     notes?: string
   }) {
-    const client = await require('../config/database').getClient()
+    const client = await getClient()
     try {
       await client.query('BEGIN')
 
