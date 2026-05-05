@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, AlertCircle, TrendingUp } from 'lucide-react'
 
 interface AddProductModalProps {
   isOpen: boolean
@@ -34,6 +34,17 @@ const initialFormData: ProductFormData = {
   description: '',
 }
 
+const UNITS = [
+  'Units',
+  'Bags',
+  'Kilograms',
+  'Liters',
+  'Bottles',
+  'Boxes',
+  'Crates',
+  'Bundles',
+]
+
 export default function AddProductModal({
   isOpen,
   onClose,
@@ -48,6 +59,415 @@ export default function AddProductModal({
   const [newCategory, setNewCategory] = useState('')
   const [addingCategory, setAddingCategory] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'inventory'>('basic')
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData(initialFormData)
+      setErrors({})
+      setShowNewCategory(false)
+      setNewCategory('')
+      setActiveTab('basic')
+    }
+  }, [isOpen])
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.name.trim()) newErrors.name = 'Product name is required'
+    if (!formData.sku.trim()) newErrors.sku = 'SKU is required'
+    if (!formData.category) newErrors.category = 'Category is required'
+    if (formData.price <= 0) newErrors.price = 'Price must be greater than 0'
+    if (formData.cost_price < 0) newErrors.cost_price = 'Buying price cannot be negative'
+    if (formData.cost_price >= formData.price) newErrors.cost_price = 'Buying price must be less than selling price'
+    if (formData.quantity < 0) newErrors.quantity = 'Quantity cannot be negative'
+    if (!formData.unit.trim()) newErrors.unit = 'Unit is required'
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) {
+      setErrors({ ...errors, newCategory: 'Category name is required' })
+      return
+    }
+
+    try {
+      setAddingCategory(true)
+      await onAddCategory(newCategory)
+      setFormData({ ...formData, category: newCategory })
+      setNewCategory('')
+      setShowNewCategory(false)
+      setErrors({ ...errors, newCategory: '' })
+    } catch (error) {
+      setErrors({ ...errors, newCategory: error instanceof Error ? error.message : 'Failed to add category' })
+    } finally {
+      setAddingCategory(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) return
+
+    try {
+      setSubmitting(true)
+      await onSubmit(formData)
+      setFormData(initialFormData)
+      setErrors({})
+      onClose()
+    } catch (error) {
+      setErrors({ submit: error instanceof Error ? error.message : 'Failed to add product' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'price' || name === 'cost_price' || name === 'quantity' || name === 'reorderLevel' ? parseFloat(value) || 0 : value,
+    }))
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' })
+    }
+  }
+
+  const profit = formData.price - formData.cost_price
+  const profitMargin = formData.cost_price > 0 ? ((profit / formData.cost_price) * 100).toFixed(1) : '0'
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Add New Product</h2>
+            <p className="text-sm text-gray-600 mt-1">Create a new product in your inventory</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+            disabled={submitting || addingCategory}
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 bg-gray-50 px-6">
+          {(['basic', 'pricing', 'inventory'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+                activeTab === tab
+                  ? 'text-blue-600 border-blue-600'
+                  : 'text-gray-600 border-transparent hover:text-gray-900'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)} Info
+            </button>
+          ))}
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {errors.submit && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700">
+              <AlertCircle size={20} />
+              <span>{errors.submit}</span>
+            </div>
+          )}
+
+          {/* BASIC INFO TAB */}
+          {activeTab === 'basic' && (
+            <div className="space-y-5">
+              {/* Product Name */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Product Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+                    errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Premium Animal Feed"
+                  disabled={submitting || addingCategory}
+                />
+                {errors.name && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.name}</p>}
+              </div>
+
+              {/* SKU */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">SKU (Stock Keeping Unit) *</label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={formData.sku}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+                    errors.sku ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., AF-2024-001"
+                  disabled={submitting || addingCategory}
+                />
+                {errors.sku && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.sku}</p>}
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Category *</label>
+                {showNewCategory ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.newCategory ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter new category name"
+                      disabled={addingCategory || submitting}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCategory}
+                      className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium"
+                      disabled={addingCategory || submitting}
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewCategory(false)
+                        setNewCategory('')
+                        setErrors({ ...errors, newCategory: '' })
+                      }}
+                      className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+                      disabled={addingCategory || submitting}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.category ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                      }`}
+                      disabled={submitting || addingCategory}
+                    >
+                      <option value="">-- Select a category --</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCategory(true)}
+                      className="text-sm text-blue-600 hover:text-blue-700 mt-2 font-semibold"
+                      disabled={submitting || addingCategory}
+                    >
+                      + Create New Category
+                    </button>
+                  </div>
+                )}
+                {errors.category && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.category}</p>}
+                {errors.newCategory && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.newCategory}</p>}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Product details, specifications, supplier info, etc."
+                  rows={4}
+                  disabled={submitting || addingCategory}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* PRICING TAB */}
+          {activeTab === 'pricing' && (
+            <div className="space-y-5">
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <p className="text-sm text-blue-900 font-medium">💡 Tip: Set competitive buying and selling prices to maximize profit margins</p>
+              </div>
+
+              {/* Buying Price */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Buying Price (Cost) - KES *</label>
+                <input
+                  type="number"
+                  name="cost_price"
+                  value={formData.cost_price || ''}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+                    errors.cost_price ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  disabled={submitting || addingCategory}
+                />
+                {errors.cost_price && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.cost_price}</p>}
+              </div>
+
+              {/* Selling Price */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Selling Price (Retail) - KES *</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price || ''}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+                    errors.price ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  disabled={submitting || addingCategory}
+                />
+                {errors.price && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.price}</p>}
+              </div>
+
+              {/* Profit Summary Card */}
+              {formData.price > 0 && formData.cost_price > 0 && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-300 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="text-green-600" size={20} />
+                    <h3 className="font-semibold text-gray-900">Profit Breakdown</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-medium">Profit/Unit</p>
+                      <p className="text-lg font-bold text-green-600">KES {profit.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-medium">Margin %</p>
+                      <p className="text-lg font-bold text-green-600">{profitMargin}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-medium">Category</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {profitMargin > 30 ? '🔥 Excellent' : profitMargin > 20 ? '✓ Good' : '⚠ Low'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* INVENTORY TAB */}
+          {activeTab === 'inventory' && (
+            <div className="space-y-5">
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                <p className="text-sm text-amber-900 font-medium">📦 Set accurate stock quantities and reorder levels</p>
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Initial Quantity *</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={formData.quantity || ''}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+                    errors.quantity ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="0"
+                  min="0"
+                  disabled={submitting || addingCategory}
+                />
+                {errors.quantity && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.quantity}</p>}
+              </div>
+
+              {/* Unit */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Unit of Measure *</label>
+                <select
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.unit ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  disabled={submitting || addingCategory}
+                >
+                  {UNITS.map((unit) => (
+                    <option key={unit} value={unit.toLowerCase()}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+                {errors.unit && <p className="text-red-600 text-sm mt-1 flex items-center gap-1">⚠ {errors.unit}</p>}
+              </div>
+
+              {/* Reorder Level */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Reorder Level (Minimum Stock) *</label>
+                <input
+                  type="number"
+                  name="reorderLevel"
+                  value={formData.reorderLevel || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Alert when stock falls below this level"
+                  min="0"
+                  disabled={submitting || addingCategory}
+                />
+                <p className="text-xs text-gray-600 mt-2">
+                  🚨 You'll be alerted when stock reaches {formData.reorderLevel || '0'} {formData.unit || 'units'}
+                </p>
+              </div>
+            </div>
+          )}
+        </form>
+
+        {/* Footer Buttons */}
+        <div className="flex gap-3 p-6 border-t-2 border-gray-200 bg-gray-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+            disabled={submitting || addingCategory}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="flex-1 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            disabled={submitting || addingCategory || isLoading}
+          >
+            {submitting ? '⏳ Adding...' : '✓ Add Product'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
   useEffect(() => {
     if (!isOpen) {
